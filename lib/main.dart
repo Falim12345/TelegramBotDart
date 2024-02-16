@@ -8,7 +8,7 @@ import 'package:teledart/teledart.dart';
 import 'package:teledart/telegram.dart';
 
 void main() async {
-  Set<String> coinPars = await getAllTradingPairs();
+  Set<String> coinPairs = await getAllTradingPairs();
   final getIndexBinance = GetIndexBinance();
 
   List<TradingPair> selectedPairs = [];
@@ -16,9 +16,8 @@ void main() async {
   String? upperLimit;
   String? lowerLimit;
 
-  bool isValidPair = false;
-  bool isUpperLimitValid = false;
-  bool islowerLimitValid = false;
+  bool isWaitingForUpperLimit = false;
+  bool isWaitingForLowerLimit = false;
 
   final username = (await Telegram(BotUtil.botToken).getMe()).username;
   var teledart = TeleDart(BotUtil.botToken, Event(username!));
@@ -30,7 +29,7 @@ void main() async {
   });
 
   teledart.onCommand('select').listen((event) async {
-    var keyboard = coinPars.map((e) => [KeyboardButton(text: e)]).toList();
+    var keyboard = coinPairs.map((e) => [KeyboardButton(text: e)]).toList();
 
     var replyKeyboard = ReplyKeyboardMarkup(
         keyboard: keyboard,
@@ -41,79 +40,70 @@ void main() async {
   });
 
   teledart.onMessage().listen((message) async {
-    if (coinPars.contains(message.text)) {
+    if (coinPairs.contains(message.text)) {
       userIndexChoice = message.text;
-      print('Пользователь выбрал торговую пару: ${message.text}');
-      isValidPair = true;
+      print('User selected trading pair: ${message.text}');
       await message.reply('Select upper border');
-
-      teledart.onMessage().listen((event1) async {
-        if (isValidLimit(event1.text ?? 'nonValid')) {
-          print('Пользователь выбрал верхнюю границу: ${event1.text}');
-          isUpperLimitValid = true;
-          upperLimit = event1.text;
-          await event1.reply('Select Bottom Border');
-
-          teledart.onMessage().listen((event2) async {
-            if (isValidLimit(event2.text ?? 'nonValid')) {
-              print('Пользователь выбрал нижнюю границу: ${event2.text}');
-              lowerLimit = event2.text;
-              islowerLimitValid = true;
-              await event2.reply(
-                  'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select ');
-              final webSocketChannel = await getIndexBinance
-                  .getWebSocketChannel(userIndexChoice ?? '');
-
-              var tradingPair = TradingPair.createFromVariables(
-                userIndexChoice,
-                upperLimit,
-                lowerLimit,
-                webSocketChannel,
-              );
-
-              selectedPairs.add(tradingPair);
-              print('Добавлен объект в List: $tradingPair');
-              print(selectedPairs);
-
-              webSocketChannel.stream.listen((data) async {
-                print(data);
-                // Парсинг данных
-                var jsonData = json.decode(data);
-                var symbol = jsonData['s']; // торговая пара
-                var price = double.parse(jsonData['p']); // текущая цена
-
-                // Сравнение с верхней и нижней границами
-                if (price > double.parse(upperLimit ?? '') ||
-                    price < double.parse(lowerLimit ?? '')) {
-                  // Отправка уведомления
-                  await message.reply(
-                      'The price for the $symbol pair has crossed the specified boundaries.');
-                  // Закрытие соединения для данной пары
-                  webSocketChannel.sink.close();
-                }
-              }, onError: (error) {
-                print('Произошла ошибка: $error');
-              }, onDone: () {
-                print('Соединение закрыто');
-              });
-            } else {
-              if (!islowerLimitValid) {
-                await message
-                    .reply('Нижний лимит задан не верно попробуйте еще раз.');
-              }
-            }
-          });
-        } else {
-          if (!isUpperLimitValid) {
-            await message
-                .reply('Верхний лимит задан не верно попробуйте еще раз.');
-          }
-        }
-      });
-    } else {
-      if (!isValidPair) {
-        await message.reply('Торговая пара не найдена. Попробуйте еще раз.');
+      isWaitingForUpperLimit = true;
+    } else if (isWaitingForUpperLimit) {
+      if (isValidLimit(message.text ?? 'nonValid')) {
+        print('User selected upper limit: ${message.text}');
+        upperLimit = message.text;
+        await message.reply('Select Bottom Border');
+        isWaitingForUpperLimit = false;
+        isWaitingForLowerLimit = true;
+      } else {
+        await message.reply('Upper limit is not valid. Please try again.');
       }
+    } else if (isWaitingForLowerLimit) {
+      if (isValidLimit(message.text ?? 'nonValid')) {
+        print('User selected lower limit: ${message.text}');
+        await message.reply(
+            'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select');
+        lowerLimit = message.text;
+        isWaitingForLowerLimit = false;
+
+        // Process the selected trading pair with limits
+        final webSocketChannel =
+            await getIndexBinance.getWebSocketChannel(userIndexChoice ?? '');
+
+        var tradingPair = TradingPair.createFromVariables(
+          userIndexChoice,
+          upperLimit,
+          lowerLimit,
+          webSocketChannel,
+        );
+
+        selectedPairs.add(tradingPair);
+        print('Added object to List: $tradingPair');
+        print(selectedPairs);
+
+        webSocketChannel.stream.listen((data) async {
+          print(data);
+          // Parse data
+          var jsonData = json.decode(data);
+          var symbol = jsonData['s']; // trading pair
+          var price = double.parse(jsonData['p']); // current price
+
+          // Compare with upper and lower limits
+          if (price > double.parse(upperLimit ?? '') ||
+              price < double.parse(lowerLimit ?? '')) {
+            // Send notification
+            await message.reply(
+                'The price for the $symbol pair has crossed the specified boundaries.');
+            // Close connection for this pair
+            webSocketChannel.sink.close();
+          }
+        }, onError: (error) {
+          print('An error occurred: $error');
+        }, onDone: () {
+          print('Connection closed');
+        });
+      } else {
+        await message.reply('Lower limit is not valid. Please try again.');
+      }
+    } else {
+      await message.reply('Invalid trading pair. Please try again.');
     }
   });
 }
