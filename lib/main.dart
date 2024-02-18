@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_application_1/model/trading_pair.dart';
 import 'package:dart_application_1/repos/repository.dart';
 import 'package:dart_application_1/util.dart';
+import 'package:dart_application_1/valid.dart';
 import 'package:teledart/model.dart';
 import 'package:teledart/teledart.dart';
 import 'package:teledart/telegram.dart';
@@ -46,7 +47,7 @@ void main() async {
       await message.reply('Select upper border');
       isWaitingForUpperLimit = true;
     } else if (isWaitingForUpperLimit) {
-      if (isValidLimit(message.text ?? 'nonValid')) {
+      if (Validation().isValidLimit(message.text ?? 'nonValid')) {
         print('User selected upper limit: ${message.text}');
         upperLimit = message.text;
         await message.reply('Select Bottom Border');
@@ -56,7 +57,7 @@ void main() async {
         await message.reply('Upper limit is not valid. Please try again.');
       }
     } else if (isWaitingForLowerLimit) {
-      if (isValidLimit(message.text ?? 'nonValid')) {
+      if (Validation().isValidLimit(message.text ?? 'nonValid')) {
         print('User selected lower limit: ${message.text}');
         await message.reply(
             'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select');
@@ -106,20 +107,4 @@ void main() async {
       await message.reply('Invalid trading pair. Please try again.');
     }
   });
-}
-
-bool isValidLimit(String input) {
-  try {
-    double value = double.parse(input.replaceAll(',', '.'));
-    if (value.isNaN || value.isInfinite) {
-      return false;
-    }
-    if (!RegExp(r'^[0-9]+(?:\.[0-9]+)?$').hasMatch(input)) {
-      return false;
-    }
-    // Дополнительные условия, если необходимо
-    return true;
-  } catch (e) {
-    return false; // Ошибка при преобразовании или иное исключение
-  }
 }
