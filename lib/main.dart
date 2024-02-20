@@ -58,10 +58,10 @@ void main() async {
       }
     } else if (isWaitingForLowerLimit) {
       if (Validation().isValidLimit(message.text ?? 'nonValid')) {
+        lowerLimit = message.text;
         print('User selected lower limit: ${message.text}');
         await message.reply(
             'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select');
-        lowerLimit = message.text;
         isWaitingForLowerLimit = false;
 
         // Process the selected trading pair with limits
