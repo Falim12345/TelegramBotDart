@@ -43,7 +43,6 @@ Future<List<String>> getAllCoins() async {
 }
 
 class GetIndexBinance {
-  // Метод для получения WebSocketChannel
   Future<WebSocketChannel> getWebSocketChannel(String coin) async {
     final wsUrl = Uri.parse(WebSocketBinance().wsIndexUrl(coin));
     final channel = WebSocketChannel.connect(wsUrl);
@@ -60,19 +59,16 @@ class GetIndexBinance {
 
 //     channel.stream.listen(
 //       (message) {
-//         // Этот обработчик вызывается при получении сообщения
 //         print('Received message: $message');
 //       },
 //       onDone: () {
-//         // Этот обработчик вызывается, когда соединение закрывается
 //         print('Connection closed');
 //       },
 //       onError: (error) {
-//         // Этот обработчик вызывается в случае ошибки
 //         print('Error: $error');
 //       },
 //       cancelOnError:
-//           true, // Позволяет автоматически закрыть соединение при возникновении ошибки
+//           true, 
 //     );
 //   }
 // }

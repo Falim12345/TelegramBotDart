@@ -57,14 +57,16 @@ void main() async {
         await message.reply('Upper limit is not valid. Please try again.');
       }
     } else if (isWaitingForLowerLimit) {
-      if (Validation().isValidLimit(message.text ?? 'nonValid')) {
+      lowerLimit = message.text;
+      if (Validation().isValidLimit(message.text ?? 'nonValid') &&
+          double.parse(message.text!) < double.parse(upperLimit ?? '0') &&
+          double.parse(message.text!) != double.parse(upperLimit ?? '0')) {
         lowerLimit = message.text;
         print('User selected lower limit: ${message.text}');
         await message.reply(
             'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select');
         isWaitingForLowerLimit = false;
 
-        // Process the selected trading pair with limits
         final webSocketChannel =
             await getIndexBinance.getWebSocketChannel(userIndexChoice ?? '');
 
@@ -83,16 +85,17 @@ void main() async {
           print(data);
           // Parse data
           var jsonData = json.decode(data);
-          var symbol = jsonData['s']; // trading pair
-          var price = double.parse(jsonData['p']); // current price
+          var symbol = jsonData['s'];
+          var price = double.parse(jsonData['p']);
 
-          // Compare with upper and lower limits
-          if (price > double.parse(upperLimit ?? '') ||
-              price < double.parse(lowerLimit ?? '')) {
-            // Send notification
-            await message.reply(
-                'The price for the $symbol pair has crossed the specified boundaries.');
-            // Close connection for this pair
+          if (price > double.parse(upperLimit ?? '')) {
+            await message
+                .reply('The price of $symbol crossed the upper limit.');
+
+            webSocketChannel.sink.close();
+          } else if (price < double.parse(lowerLimit ?? '')) {
+            await message
+                .reply('The price of $symbol crossed the lower limit.');
             webSocketChannel.sink.close();
           }
         }, onError: (error) {
