@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dart_application_1/model/trading_pair.dart';
@@ -10,9 +11,11 @@ import 'package:teledart/telegram.dart';
 
 void main() async {
   Set<String> coinPairs = await getAllTradingPairs();
+
   final getIndexBinance = GetIndexBinance();
 
   List<TradingPair> selectedPairs = [];
+
   String? userIndexChoice;
   String? upperLimit;
   String? lowerLimit;
@@ -22,6 +25,7 @@ void main() async {
 
   final username = (await Telegram(BotUtil.botToken).getMe()).username;
   var teledart = TeleDart(BotUtil.botToken, Event(username!));
+  List<Map<String, dynamic>> messages = [];
 
   teledart.start();
   teledart.onCommand('start').listen((event) async {
@@ -41,6 +45,16 @@ void main() async {
   });
 
   teledart.onMessage().listen((message) async {
+    messages.add({
+      'text': message.text,
+      'timestamp': DateTime.now(),
+    });
+
+    // var userId = message.from?.id;
+    // print(userId);
+    var userId = message.from?.username;
+    print(userId);
+
     if (coinPairs.contains(message.text)) {
       userIndexChoice = message.text;
       print('User selected trading pair: ${message.text}');
@@ -76,7 +90,6 @@ void main() async {
           lowerLimit,
           webSocketChannel,
         );
-
         selectedPairs.add(tradingPair);
         print('Added object to List: $tradingPair');
         print(selectedPairs);
@@ -88,14 +101,17 @@ void main() async {
           var symbol = jsonData['s'];
           var price = double.parse(jsonData['p']);
 
-          if (price > double.parse(upperLimit ?? '')) {
-            await message
-                .reply('The price of $symbol crossed the upper limit.');
+          if (price > tradingPair.upperLimit!) {
+            print(tradingPair.upperLimit);
+            await message.reply(
+                '#up\u{1F4C8}\u{2197} $symbol > ${tradingPair.upperLimit}.');
 
             webSocketChannel.sink.close();
-          } else if (price < double.parse(lowerLimit ?? '')) {
-            await message
-                .reply('The price of $symbol crossed the lower limit.');
+          } else if (price < tradingPair.lowerLimit!) {
+            print(tradingPair.lowerLimit);
+            await message.reply(
+                '#down\u{1F4C9}\u{2198} $symbol < ${tradingPair.lowerLimit}.');
+
             webSocketChannel.sink.close();
           }
         }, onError: (error) {
@@ -108,6 +124,37 @@ void main() async {
       }
     } else {
       await message.reply('Invalid trading pair. Please try again.');
+    }
+  });
+
+  teledart.onCommand('history').listen((event) async {
+    if (selectedPairs.isNotEmpty) {
+      var pairsMessage = selectedPairs
+          .map((element) =>
+              'Currency pair ${element.name}, Upper limit: ${element.upperLimit}, Lower limit: ${element.lowerLimit}, Tracking Status: ${element.webSocketChannel?.closeReason == null ? "Connection Open" : "Connection Closed"}')
+          .join('\n');
+
+      await event.reply(pairsMessage);
+    } else {
+      await event
+          .reply('There are no trading pairs selected. Please try again.');
+    }
+  });
+
+  teledart.onCommand('spotlight').listen((event) async {
+    var activePairs = selectedPairs
+        .where((pair) => pair.webSocketChannel?.closeReason == null);
+
+    if (activePairs.isNotEmpty) {
+      // Собираем все строки для активных подключений в одну
+      var activePairsMessage = activePairs
+          .map((pair) =>
+              'Currency pair ${pair.name}, Upper limit: ${pair.upperLimit}, Lower limit: ${pair.lowerLimit}, Connection Status: Open')
+          .join('\n');
+
+      await event.reply(activePairsMessage);
+    } else {
+      await event.reply('There are no active trading pairs. Please try again.');
     }
   });
 }
