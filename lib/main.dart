@@ -25,10 +25,16 @@ void main() async {
 
   final username = (await Telegram(BotUtil.botToken).getMe()).username;
   var teledart = TeleDart(BotUtil.botToken, Event(username!));
-  List<Map<String, dynamic>> messages = [];
+  List<int> messages = [];
 
   teledart.start();
+  // teledart.onMessage().listen((message) {
+  //   messages.add(message.messageId);
+  // });
+
   teledart.onCommand('start').listen((event) async {
+    messages.add(event.messageId);
+
     await event.reply(
         'Good day, to select the currency pair you want to track, select the command /select \u{1F388}\u{270C} ');
   });
@@ -45,11 +51,6 @@ void main() async {
   });
 
   teledart.onMessage().listen((message) async {
-    messages.add({
-      'text': message.text,
-      'timestamp': DateTime.now(),
-    });
-
     // var userId = message.from?.id;
     // print(userId);
     var userId = message.from?.username;
@@ -80,6 +81,15 @@ void main() async {
         await message.reply(
             'You are now tracking a trading pair $userIndexChoice with an upper $upperLimit and lower $lowerLimit boundary. To start tracking a new one, enter the command /select');
         isWaitingForLowerLimit = false;
+        // for (var element in messages) {
+        //   print(element);
+        // }
+        // if (!message.text!.startsWith('#')) {
+        //   for (var messageId in messages) {
+        //     await Telegram(BotUtil.botToken)
+        //         .deleteMessage(message.chat.id, messageId);
+        //   }
+        // }
 
         final webSocketChannel =
             await getIndexBinance.getWebSocketChannel(userIndexChoice ?? '');
