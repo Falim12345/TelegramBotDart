@@ -4,9 +4,9 @@ class BotUtil {
 }
 
 class WebSocketBinance {
-  static const String wsUrl = 'wss://ws-api.binance.com:443/ws-api/v3';
+  static const String wsUrl = 'wss://stream.binance.com:9443/ws/@avgPrice';
 
   String wsIndexUrl(String currencyPair) {
-    return 'wss://nbstream.binance.com/eoptions/ws/$currencyPair@index';
+    return 'wss://stream.binance.com:9443/ws/$currencyPair@avgPrice';
   }
 }

@@ -91,8 +91,8 @@ void main() async {
         //   }
         // }
 
-        final webSocketChannel =
-            await getIndexBinance.getWebSocketChannel(userIndexChoice ?? '');
+        final webSocketChannel = await getIndexBinance
+            .getWebSocketChannel(userIndexChoice?.toLowerCase() ?? '');
 
         var tradingPair = TradingPair.createFromVariables(
           userIndexChoice,
@@ -109,18 +109,21 @@ void main() async {
           // Parse data
           var jsonData = json.decode(data);
           var symbol = jsonData['s'];
-          var price = double.parse(jsonData['p']);
+          var price = double.parse(jsonData['w']);
 
           if (price > tradingPair.upperLimit!) {
             print(tradingPair.upperLimit);
             await message.reply(
                 '#up\u{1F4C8}\u{2197} $symbol > ${tradingPair.upperLimit}.');
+            print('пересекла верхний предел Средняя цена $price');
 
             webSocketChannel.sink.close();
           } else if (price < tradingPair.lowerLimit!) {
-            print(tradingPair.lowerLimit);
+            print(tradingPair.lowerLimit.runtimeType);
+            print(price.runtimeType);
             await message.reply(
                 '#down\u{1F4C9}\u{2198} $symbol < ${tradingPair.lowerLimit}.');
+            print('пересекла нижний предел Средняя цена $price');
 
             webSocketChannel.sink.close();
           }

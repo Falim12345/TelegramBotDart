@@ -1,86 +1,34 @@
-// import 'package:dart_application_1/repos/repository.dart';
-// import 'package:dart_application_1/util.dart';
-// import 'package:teledart/model.dart';
-// import 'package:teledart/teledart.dart';
-// import 'package:teledart/telegram.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
-// void main() async {
-//   Set<String> coinPars = await getAllTradingPairs();
-//   var getIndex = GetIndexBinance();
-//   List<TradingPair> selectedPairs = [];
-//   String? userIndexChoice;
-//   String? upperLimit;
-//   String? lowerLimit;
-//   final username = (await Telegram(BotUtil.botToken).getMe()).username;
-//   var teledart = TeleDart(BotUtil.botToken, Event(username!));
+void main() {
+  final lowerLimit = 51729; // Нижний предел
+  final upperLimit = 51731; // Верхний предел
 
-//   teledart.start();
+  final channel = WebSocketChannel.connect(Uri.parse(
+      'wss://stream.binance.com:9443/ws/btcusdt@avgPrice')); // Замените 'wss://your_websocket_url' на ваш URL WebSocket
+  // Подписываемся на события сокета
+  final stream = channel.stream.listen((message) {
+    final data = jsonDecode(message);
+    print(message);
+    final avgPrice = double.parse(data['w'].toString());
 
-//   teledart.onCommand('start').listen((event) async {
-//     var keyboard = coinPars.map((e) => [KeyboardButton(text: e)]).toList();
+    // Проверяем, если средняя цена выходит за пределы
+    if (avgPrice < lowerLimit) {
+      print('Средняя цена пересекла нижний предел. Средняя цена: $avgPrice');
+      channel.sink.close(); // Закрываем соединение
+    } else if (avgPrice > upperLimit) {
+      print('Средняя цена пересекла верхний предел. Средняя цена: $avgPrice');
+      channel.sink.close(); // Закрываем соединение
+    }
+  });
 
-//     var replyKeyboard = ReplyKeyboardMarkup(
-//         keyboard: keyboard,
-//         resizeKeyboard: true,
-//         oneTimeKeyboard: true,
-//         selective: true);
-//     await event.reply('Выберите торговую пару:', replyMarkup: replyKeyboard);
-//   });
+  // Обработка ошибок
+  stream.onError((error) {
+    print('Произошла ошибка: $error');
+  });
 
-//   teledart.onMessage().listen((message) async {
-//     if (coinPars.contains(message.text)) {
-//       userIndexChoice = message.text;
-//       print('Пользователь выбрал торговую пару: ${message.text}');
-//       await message.reply('Выберите верхнюю границу');
-
-//       teledart.onMessage().take(1).listen((event1) async {
-//         if (event1.text != null) {
-//           print('Пользователь выбрал верхнюю границу: ${event1.text}');
-//           upperLimit = event1.text;
-//           await event1.reply('Выберите нижнюю границу');
-
-//           teledart.onMessage().take(1).listen((event2) {
-//             if (event2.text != null) {
-//               print('Пользователь выбрал нижнюю границу: ${event2.text}');
-//               lowerLimit = event2.text;
-//               getIndex.getIndex(userIndexChoice);
-//             }
-//           });
-//         }
-//       });
-//     }
-//   });
-// }
-
-// class TradingPair {
-//   String name;
-//   double? upperLimit;
-//   double? lowerLimit;
-
-//   TradingPair(this.name, {this.upperLimit, this.lowerLimit});
-// // }
-// import 'dart:convert';
-// // ignore: depend_on_referenced_packages
-// import 'package:http/http.dart' as http;
-
-// Future<Set<String>> getAllTradingPairs() async {
-//   final response =
-//       await http.get(Uri.parse('https://api.binance.com/api/v3/exchangeInfo'));
-
-//   if (response.statusCode == 200) {
-//     final Map<String, dynamic> data = json.decode(response.body);
-//     final List<dynamic> symbols = data['symbols'];
-
-//     // Извлекаем названия символов и добавляем их в множество
-//     final Set<String> symbolNames =
-//         symbols.map<String>((symbol) => symbol['symbol']).toSet();
-//     print(symbolNames);
-//     return symbolNames;
-//   } else {
-//     throw Exception('Failed to load trading pairs');
-//   }
-// }
-
-// void main(List<String> args) {
-//   getAllTradingPairs();
-// }
+  // Пример отправки сообщения на сервер (если необходимо)
+  // channel.sink.add('Пример сообщения');
+}
