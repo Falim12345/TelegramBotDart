@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dart_application_1/model/trading_pair.dart';
@@ -38,8 +39,6 @@ void main() async {
     ferstReply;
     messages.add(ferstReply.messageId);
 
-    // var userId = message.from?.id;
-    // messages.add(userId!);
     messages.add(message.messageId);
     for (var element in messages) {
       print(element);
@@ -48,8 +47,6 @@ void main() async {
 
   teledart.onCommand('select').listen((message) async {
     var keyboard = coinPairs.map((e) => [KeyboardButton(text: e)]).toList();
-    // var messageId = message.messageId;
-    // print(messageId);
 
     var replyKeyboard = ReplyKeyboardMarkup(
         keyboard: keyboard,
@@ -66,9 +63,6 @@ void main() async {
     for (var element in messages) {
       print(element);
     }
-
-    // var userId = message.from?.username;
-    // print(userId);
 
     if (coinPairs.contains(message.text)) {
       userIndexChoice = message.text;
@@ -104,22 +98,16 @@ void main() async {
         isWaitingForLowerLimit = false;
         sixthReply;
         messages.add(sixthReply.messageId);
-        final webSocketChannel = await getIndexBinance
-            .getWebSocketChannel(userIndexChoice?.toLowerCase() ?? '');
-        var messagesToDelete = List.from(
-            messages); // Создаем копию списка идентификаторов сообщений
+        final webSocketChannel = await getIndexBinance.getWebSocketChannel(
+          userIndexChoice?.toLowerCase() ?? '',
+        );
+        var messagesToDelete = List.from(messages);
         for (var messageId in messagesToDelete) {
-          await teledart.deleteMessage(message.chat.id, messageId);
-          messages
-              .remove(messageId); // Удаляем идентификатор сообщения из списка
+          Timer(Duration(minutes: 1), () async {
+            await teledart.deleteMessage(message.chat.id, messageId);
+            messages.remove(messageId);
+          });
         }
-        // if (!message.text!.startsWith('#')) {
-        //   for (var messageId in messages) {
-        //     messages.remove(messageId);
-        //     await Telegram(BotUtil.botToken)
-        //         .deleteMessage(message.chat.id, messageId);
-        //   }
-        // }
 
         var tradingPair = TradingPair.createFromVariables(
           userIndexChoice,
@@ -136,6 +124,11 @@ void main() async {
           var jsonData = json.decode(data);
           var symbol = jsonData['s'];
           var price = double.parse(jsonData['w']);
+          // void sendPing(Timer timer) {
+          //   webSocketChannel.sink.add('ping');
+          // }
+
+          // Timer.periodic(Duration(minutes: 1), sendPing)
 
           if (price > tradingPair.upperLimit!) {
             print(tradingPair.upperLimit);
