@@ -8,10 +8,9 @@ class Validation {
       if (!RegExp(r'^[0-9]+(?:\.[0-9]+)?$').hasMatch(input)) {
         return false;
       }
-      // Дополнительные условия, если необходимо
       return true;
     } catch (e) {
-      return false; // Ошибка при преобразовании или иное исключение
+      return false;
     }
   }
 }
