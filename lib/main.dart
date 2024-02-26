@@ -148,7 +148,7 @@ void main() async {
               print('An error occurred: $error');
             },
             onDone: () {
-              print('Connection closed');
+              print('Connection closed ${tradingPair.name}');
             },
           );
         } else {
