@@ -25,29 +25,31 @@ void main() async {
   final username = (await Telegram(BotUtil.botToken).getMe()).username;
   var teledart = TeleDart(BotUtil.botToken, Event(username!));
   List<int> messages = [];
-  List<int> userMessages = [];
+  // List<int> userMessages = [];
 
   teledart.start();
-  // teledart.onMessage().listen((message) {
-  //   messages.add(message.messageId);
-  // });
+  teledart.onMessage().listen((message) {
+    messages.add(message.messageId);
+  });
 
   teledart.onCommand('start').listen((message) async {
     var ferstReply = await message.reply(
         'Good day, to select the currency pair you want to track, select the command /select \u{1F388}\u{270C} ');
     ferstReply;
     messages.add(ferstReply.messageId);
-  });
 
-  teledart.onCommand('select').listen((message) async {
-    userMessages.add(message.messageId);
+    // var userId = message.from?.id;
+    // messages.add(userId!);
+    messages.add(message.messageId);
     for (var element in messages) {
       print(element);
     }
+  });
 
+  teledart.onCommand('select').listen((message) async {
     var keyboard = coinPairs.map((e) => [KeyboardButton(text: e)]).toList();
-    var messageId = message.messageId;
-    print(messageId);
+    // var messageId = message.messageId;
+    // print(messageId);
 
     var replyKeyboard = ReplyKeyboardMarkup(
         keyboard: keyboard,
@@ -61,8 +63,9 @@ void main() async {
   });
 
   teledart.onMessage().listen((message) async {
-    // message.from?.isBot;
-    // print(message.messageId);
+    for (var element in messages) {
+      print(element);
+    }
 
     // var userId = message.from?.username;
     // print(userId);
@@ -103,6 +106,20 @@ void main() async {
         messages.add(sixthReply.messageId);
         final webSocketChannel = await getIndexBinance
             .getWebSocketChannel(userIndexChoice?.toLowerCase() ?? '');
+        var messagesToDelete = List.from(
+            messages); // Создаем копию списка идентификаторов сообщений
+        for (var messageId in messagesToDelete) {
+          await teledart.deleteMessage(message.chat.id, messageId);
+          messages
+              .remove(messageId); // Удаляем идентификатор сообщения из списка
+        }
+        // if (!message.text!.startsWith('#')) {
+        //   for (var messageId in messages) {
+        //     messages.remove(messageId);
+        //     await Telegram(BotUtil.botToken)
+        //         .deleteMessage(message.chat.id, messageId);
+        //   }
+        // }
 
         var tradingPair = TradingPair.createFromVariables(
           userIndexChoice,
@@ -116,7 +133,6 @@ void main() async {
 
         webSocketChannel.stream.listen((data) async {
           print(data);
-          // Parse data
           var jsonData = json.decode(data);
           var symbol = jsonData['s'];
           var price = double.parse(jsonData['w']);
@@ -181,7 +197,6 @@ void main() async {
         .where((pair) => pair.webSocketChannel?.closeReason == null);
 
     if (activePairs.isNotEmpty) {
-      // Собираем все строки для активных подключений в одну
       var activePairsMessage = activePairs
           .map((pair) =>
               'Currency pair ${pair.name}, Upper limit: ${pair.upperLimit}, Lower limit: ${pair.lowerLimit}, Connection Status: Open')
