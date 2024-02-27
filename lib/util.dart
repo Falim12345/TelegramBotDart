@@ -10,3 +10,9 @@ class WebSocketBinance {
     return 'wss://stream.binance.com:9443/ws/$currencyPair@avgPrice';
   }
 }
+
+class MongoDb {
+  static String password = 'GJamiplAsUsU5fKG';
+  static String username = 'pal2323zet';
+  static String userCollection = 'UserHistory';
+}
