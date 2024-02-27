@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'package:dart_application_1/model/trading_pair.dart';
 import 'package:dart_application_1/repos/repository.dart';
@@ -36,6 +37,13 @@ void main() async {
 
   teledart.onCommand('start').listen(
     (message) async {
+      // Генерируем уникальный идентификатор пользователя на основе его идентификационных данных
+      String userIdentifier = "${message.chat.id}${message.from?.id}";
+
+      // Преобразуем идентификатор пользователя в хеш-код с использованием хеш-функции MD5
+      String userHash = md5.convert(utf8.encode(userIdentifier)).toString();
+      print(userHash);
+
       var ferstReply = await message.reply(
           'Good day, to select the currency pair you want to track, select the command /select \u{1F388}\u{270C} ');
       ferstReply;
