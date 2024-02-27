@@ -15,4 +15,5 @@ class MongoDb {
   static String password = 'GJamiplAsUsU5fKG';
   static String username = 'pal2323zet';
   static String userCollection = 'UserHistory';
+  static String use4rCollection = 'UserHistory';
 }
