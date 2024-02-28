@@ -15,5 +15,8 @@ class MongoDb {
   static String password = 'GJamiplAsUsU5fKG';
   static String username = 'pal2323zet';
   static String userCollection = 'UserHistory';
-  static String use4rCollection = 'UserHistory';
+
+  String url() {
+    return 'mongodb+srv://${MongoDb.username}:${MongoDb.password}@cluster0.bmaopus.mongodb.net/DartBot1?retryWrites=true&w=majority&appName=Cluster0';
+  }
 }

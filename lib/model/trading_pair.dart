@@ -1,12 +1,12 @@
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class TradingPair {
-  String name;
+  String userIndexChoice;
   double? upperLimit;
   double? lowerLimit;
   WebSocketChannel? webSocketChannel;
 
-  TradingPair(this.name,
+  TradingPair(this.userIndexChoice,
       {this.upperLimit, this.webSocketChannel, this.lowerLimit});
 
   factory TradingPair.createFromVariables(

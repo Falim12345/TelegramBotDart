@@ -1,12 +1,40 @@
 import 'package:dart_application_1/util.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
-void main(List<String> args) async {
-  var db = await Db.create(
-      "mongodb+srv://${MongoDb.username}:${MongoDb.password}@cluster0.bmaopus.mongodb.net/DartBot1?retryWrites=true&w=majority&appName=Cluster0");
+class MongoDbRepository {
+  static late Db db;
 
-  await db.open();
-  db
-      .collection(MongoDb.userCollection)
-      .insertOne({'test': 'test1', 'test2': 'test2'});
+  static Future<void> connect() async {
+    db = await Db.create(MongoDb().url());
+    await db.open();
+  }
+
+  static Future<void> insertHistory(
+    hashId,
+    tradingPair,
+    upperLimit,
+    lowerLimit,
+    userIdentifier,
+  ) async {
+    if (!db.isConnected) {
+      await db.open();
+      await db.collection(MongoDb.userCollection).insertOne({
+        'tradingPair': tradingPair,
+        'upperLimit': upperLimit,
+        'lowerLimit': lowerLimit,
+        'hashId': hashId,
+        'userIdentifier': userIdentifier
+      });
+      await db.close();
+    } else {
+      await db.collection(MongoDb.userCollection).insertOne({
+        'tradingPair': tradingPair,
+        'upperLimit': upperLimit,
+        'lowerLimit': lowerLimit,
+        'hashId': hashId,
+        'userIdentifier': userIdentifier
+      });
+      await db.close();
+    }
+  }
 }
