@@ -12,7 +12,7 @@ import 'package:teledart/teledart.dart';
 import 'package:teledart/telegram.dart';
 
 void main() async {
-  MongoDbRepository.connect();
+  await MongoDbRepository.connect();
   Set<String> coinPairs = await getAllTradingPairs();
 
   final getIndexBinance = GetIndexBinance();
